@@ -1,0 +1,113 @@
+﻿{% extends 'base.html' %}
+{% block title %}Agenda da Barbearia{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card card-modern border-0 shadow-lg">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Agenda Profissional</h2>
+                        <p class="text-muted mb-0">Escolha a data para ver os horários da barbearia.</p>
+                    </div>
+                    <span class="badge text-bg-dark mt-2 mt-md-0">Segunda a Sábado | 09:00 às 19:00</span>
+                </div>
+
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="dataAgenda">Data do atendimento</label>
+                        <input type="date" id="dataAgenda" class="form-control" min="{{ today|default:'' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button id="btnCarregar" class="btn btn-primary w-100" disabled>Carregar horários</button>
+                    </div>
+                </div>
+
+                <div id="mensagem" class="alert d-none" role="alert"></div>
+
+                <div id="gradeHorarios" class="d-flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const dataInput = document.getElementById('dataAgenda');
+    const btnCarregar = document.getElementById('btnCarregar');
+    const grade = document.getElementById('gradeHorarios');
+    const mensagem = document.getElementById('mensagem');
+
+    const hoje = new Date().toISOString().split('T')[0];
+    dataInput.min = hoje;
+
+    function limparMensagem() {
+        mensagem.className = 'alert d-none';
+        mensagem.textContent = '';
+    }
+
+    function mostrarMensagem(texto, tipo = 'info') {
+        mensagem.className = `alert alert-${tipo}`;
+        mensagem.textContent = texto;
+    }
+
+    function botaoHorario(item, dataSelecionada) {
+        const link = document.createElement('a');
+        link.classList.add('btn');
+        link.textContent = item.ocupado ? `${item.hora} Ocupado` : item.hora;
+
+        if (item.ocupado) {
+            link.classList.add('btn-danger', 'disabled');
+            link.setAttribute('aria-disabled', 'true');
+            link.setAttribute('tabindex', '-1');
+            link.href = '#';
+        } else {
+            link.classList.add('btn-success');
+            link.href = `{% url 'agendamentos:agendamento_create_agenda' %}?data=${dataSelecionada}&hora=${item.hora}`;
+        }
+
+        return link;
+    }
+
+    async function carregarHorarios() {
+        const dataSelecionada = dataInput.value;
+        grade.innerHTML = '';
+        limparMensagem();
+
+        if (!dataSelecionada) {
+            mostrarMensagem('Selecione uma data para continuar.', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch(`{% url 'agendamentos:horarios_disponiveis' %}?data=${dataSelecionada}`);
+            const payload = await response.json();
+
+            if (!response.ok) {
+                mostrarMensagem(payload.erro || 'Não foi possível carregar os horários.', 'warning');
+                return;
+            }
+
+            if (!Array.isArray(payload) || payload.length === 0) {
+                mostrarMensagem('Nenhum horário disponível para esta data.', 'info');
+                return;
+            }
+
+            payload.forEach((item) => {
+                grade.appendChild(botaoHorario(item, dataSelecionada));
+            });
+        } catch (error) {
+            mostrarMensagem('Erro de comunicação com o servidor. Tente novamente.', 'danger');
+        }
+    }
+
+    dataInput.addEventListener('change', () => {
+        btnCarregar.disabled = !dataInput.value;
+        grade.innerHTML = '';
+        limparMensagem();
+    });
+
+    btnCarregar.addEventListener('click', carregarHorarios);
+})();
+</script>
+{% endblock %}

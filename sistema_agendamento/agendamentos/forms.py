@@ -47,6 +47,8 @@ class AgendamentoForm(forms.ModelForm):
         data = self.cleaned_data.get('data')
         if data and data < timezone.localdate():
             raise ValidationError('Não é permitido selecionar datas passadas.')
+        if data and data.weekday() == 6:
+            raise ValidationError('A barbearia não funciona aos domingos.')
         return data
 
 

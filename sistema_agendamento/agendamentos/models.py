@@ -1,9 +1,10 @@
-﻿from datetime import datetime, timedelta
+﻿from datetime import datetime, time, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -80,6 +81,14 @@ class Agendamento(models.Model):
         ordering = ['-data', '-horario_disponivel__horario']
         verbose_name = 'Agendamento'
         verbose_name_plural = 'Agendamentos'
+        constraints = [
+            # Impede duplicidade de horário no mesmo dia para registros não cancelados.
+            models.UniqueConstraint(
+                fields=['data', 'horario_disponivel'],
+                condition=~Q(status='CANCELADO'),
+                name='unique_data_horario_ativo',
+            )
+        ]
 
     def __str__(self):
         return f'{self.cliente.username} - {self.servico.nome} - {self.data} {self.horario_disponivel}'
@@ -101,10 +110,19 @@ class Agendamento(models.Model):
         if self.data and self.data < timezone.localdate():
             raise ValidationError({'data': 'Não é permitido agendar em data passada.'})
 
+        # weekday(): segunda=0 ... domingo=6
+        if self.data and self.data.weekday() == 6:
+            raise ValidationError({'data': 'A barbearia não funciona aos domingos.'})
+
         if self.horario_disponivel and not self.horario_disponivel.ativo:
             raise ValidationError({'horario_disponivel': 'Este horário não está disponível.'})
 
-        # Impede sobreposição de horários ativos (cancelado libera o slot).
+        # Regras de funcionamento: 09:00 às 19:00, intervalo de 1h.
+        if self.horario_disponivel:
+            hora = self.horario_disponivel.horario
+            if hora < time(9, 0) or hora > time(19, 0) or hora.minute != 0:
+                raise ValidationError({'horario_disponivel': 'Horário fora do funcionamento da barbearia.'})
+
         conflito = Agendamento.objects.filter(
             data=self.data,
             horario_disponivel=self.horario_disponivel,
@@ -117,6 +135,7 @@ class Agendamento(models.Model):
             raise ValidationError({'horario_disponivel': 'Este horário já está ocupado para a data selecionada.'})
 
     def save(self, *args, **kwargs):
+        # full_clean reforça validações também em cenários concorrentes.
         self.full_clean()
         super().save(*args, **kwargs)
 

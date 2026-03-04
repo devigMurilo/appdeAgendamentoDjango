@@ -7,8 +7,10 @@ app_name = 'agendamentos'
 urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
     path('cadastro/', views.RegistroUsuarioView.as_view(), name='register'),
-
     path('admin/dashboard/', views.DashboardAdminView.as_view(), name='dashboard_admin'),
+
+    path('agenda/', views.agenda_view, name='agenda'),
+    path('api/horarios/', views.horarios_disponiveis, name='horarios_disponiveis'),
 
     path('servicos/', views.ServicoListView.as_view(), name='servico_list'),
     path('servicos/novo/', views.ServicoCreateView.as_view(), name='servico_create'),
@@ -22,6 +24,7 @@ urlpatterns = [
 
     path('meus-agendamentos/', views.AgendamentoListClienteView.as_view(), name='agendamento_cliente_list'),
     path('meus-agendamentos/novo/', views.AgendamentoCreateView.as_view(), name='agendamento_create'),
+    path('agendamento/novo/', views.AgendamentoCreateView.as_view(), name='agendamento_create_agenda'),
     path('meus-agendamentos/<int:pk>/editar/', views.AgendamentoUpdateView.as_view(), name='agendamento_update'),
     path('meus-agendamentos/<int:pk>/cancelar/', views.AgendamentoCancelView.as_view(), name='agendamento_cancel'),
 
