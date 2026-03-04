@@ -1,0 +1,25 @@
+﻿{% extends 'base.html' %}
+{% block title %}Dashboard Administrativo{% endblock %}
+{% block content %}
+<h2 class="mb-4">Dashboard Administrativo</h2>
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card card-modern"><div class="card-body"><h6>Total de serviços</h6><h3>{{ total_servicos }}</h3></div></div></div>
+    <div class="col-md-4"><div class="card card-modern"><div class="card-body"><h6>Horários ativos</h6><h3>{{ total_horarios }}</h3></div></div></div>
+    <div class="col-md-4"><div class="card card-modern"><div class="card-body"><h6>Total de agendamentos</h6><h3>{{ total_agendamentos }}</h3></div></div></div>
+</div>
+<div class="card card-modern">
+    <div class="card-body">
+        <h5>Agendamentos por status</h5>
+        <ul class="list-group list-group-flush">
+            {% for item in por_status %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ item.status }}</span>
+                    <strong>{{ item.total }}</strong>
+                </li>
+            {% empty %}
+                <li class="list-group-item">Nenhum agendamento encontrado.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

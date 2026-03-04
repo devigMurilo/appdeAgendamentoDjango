@@ -1,0 +1,17 @@
+﻿{% extends 'base.html' %}
+{% block title %}Alterar Status{% endblock %}
+{% block content %}
+<div class="card card-modern col-lg-6 mx-auto">
+    <div class="card-body">
+        <h3 class="mb-3">Alterar status do agendamento</h3>
+        <p><strong>Cliente:</strong> {{ object.cliente.get_full_name|default:object.cliente.username }}</p>
+        <p><strong>Data:</strong> {{ object.data|date:'d/m/Y' }} às {{ object.horario_disponivel.horario|time:'H:i' }}</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Atualizar</button>
+            <a class="btn btn-secondary" href="{% url 'agendamentos:agendamento_admin_list' %}">Voltar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

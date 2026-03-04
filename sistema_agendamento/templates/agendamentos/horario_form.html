@@ -1,0 +1,15 @@
+﻿{% extends 'base.html' %}
+{% block title %}Horário{% endblock %}
+{% block content %}
+<div class="card card-modern col-lg-6 mx-auto">
+    <div class="card-body">
+        <h3 class="mb-3">{{ view.object|default_if_none:'Novo' }} Horário</h3>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Salvar</button>
+            <a class="btn btn-secondary" href="{% url 'agendamentos:horario_list' %}">Voltar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

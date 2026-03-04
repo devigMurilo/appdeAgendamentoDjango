@@ -1,0 +1,15 @@
+﻿{% extends 'base.html' %}
+{% block title %}Confirmação{% endblock %}
+{% block content %}
+<div class="card card-modern col-lg-6 mx-auto">
+    <div class="card-body">
+        <h3 class="mb-3">Confirmar ação</h3>
+        <p>Tem certeza que deseja continuar?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-danger" type="submit">Confirmar</button>
+            <a class="btn btn-secondary" href="javascript:history.back()">Voltar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
