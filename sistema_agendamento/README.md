@@ -125,3 +125,6 @@ sistema_agendamento/
 - A recuperação de senha usa backend de e-mail em console (`EMAIL_BACKEND = console`), ideal para desenvolvimento.
 - O tipo de usuário é salvo no model `Perfil` (OneToOne com `User`).
 - O layout foi feito com Bootstrap 5 e CSS customizado responsivo.
+
+
+-  projeto feito em vibe code
