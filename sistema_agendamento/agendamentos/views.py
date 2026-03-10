@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from django.db.models import Count, Q
+from django.db.models import Count, Q, ProtectedError
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
@@ -14,19 +14,20 @@ from django.views.generic import CreateView, DeleteView, ListView, TemplateView,
 
 from .forms import AgendamentoForm, AlterarStatusAgendamentoForm, RegistroUsuarioForm
 from .models import Agendamento, HorarioDisponivel, Perfil, Servico
-
-HORARIO_INICIO = 9
-HORARIO_FIM = 19
-
+from .utils import _horarios_barbearia
 
 class PerfilMixin:
     def is_admin(self):
         return self.request.user.is_staff or (
-            hasattr(self.request.user, 'perfil') and self.request.user.perfil.tipo_usuario == Perfil.TIPO_ADMIN
+            hasattr(self.request.user, 'perfil')
+            and self.request.user.perfil.tipo_usuario == Perfil.TIPO_ADMIN
         )
 
     def is_cliente(self):
-        return hasattr(self.request.user, 'perfil') and self.request.user.perfil.tipo_usuario == Perfil.TIPO_CLIENTE
+        return (
+            hasattr(self.request.user, 'perfil')
+            and self.request.user.perfil.tipo_usuario == Perfil.TIPO_CLIENTE
+        )
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin, PerfilMixin):
@@ -40,19 +41,16 @@ class ClienteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin, PerfilMixin)
 
 
 def _usuario_eh_cliente(user):
-    return user.is_authenticated and hasattr(user, 'perfil') and user.perfil.tipo_usuario == Perfil.TIPO_CLIENTE
+    return (
+        user.is_authenticated
+        and hasattr(user, 'perfil')
+        and user.perfil.tipo_usuario == Perfil.TIPO_CLIENTE
+    )
 
 
-def _horarios_barbearia():
-    # Gera a grade fixa da barbearia: 09:00, 10:00, ..., 19:00.
-    return [time(hora, 0) for hora in range(HORARIO_INICIO, HORARIO_FIM + 1)]
-
-
-def _garantir_horarios_base():
-    # Mantém a tabela HorarioDisponivel alinhada com a agenda fixa.
-    for hora in _horarios_barbearia():
-        HorarioDisponivel.objects.get_or_create(horario=hora, defaults={'ativo': True})
-
+# ---------------------------------------------------------------------------
+# Views gerais
+# ---------------------------------------------------------------------------
 
 class HomeView(TemplateView):
     template_name = 'agendamentos/home.html'
@@ -76,16 +74,23 @@ class DashboardAdminView(AdminRequiredMixin, TemplateView):
         context['total_servicos'] = Servico.objects.count()
         context['total_horarios'] = HorarioDisponivel.objects.filter(ativo=True).count()
         context['total_agendamentos'] = Agendamento.objects.count()
-        context['por_status'] = Agendamento.objects.values('status').annotate(total=Count('id')).order_by('status')
+        context['por_status'] = (
+            Agendamento.objects.values('status').annotate(total=Count('id')).order_by('status')
+        )
         return context
 
+
+# ---------------------------------------------------------------------------
+# Agenda (clientes)
+# ---------------------------------------------------------------------------
 
 @login_required
 def agenda_view(request):
     if not _usuario_eh_cliente(request.user):
         messages.error(request, 'A agenda é exclusiva para clientes.')
         return redirect('agendamentos:home')
-    return render(request, 'agendamentos/agenda.html')
+    servicos = Servico.objects.filter(ativo=True).order_by('nome')
+    return render(request, 'agendamentos/agenda.html', {'servicos': servicos})
 
 
 @login_required
@@ -109,20 +114,22 @@ def horarios_disponiveis(request):
     if data_escolhida.weekday() == 6:
         return JsonResponse({'erro': 'A barbearia não funciona aos domingos.'}, status=400)
 
-    _garantir_horarios_base()
-
     horarios_ocupados = set(
         Agendamento.objects.filter(data=data_escolhida)
         .exclude(status=Agendamento.STATUS_CANCELADO)
         .values_list('horario_disponivel__horario', flat=True)
     )
 
-    resposta = []
-    for hora in _horarios_barbearia():
-        resposta.append({'hora': hora.strftime('%H:%M'), 'ocupado': hora in horarios_ocupados})
-
+    resposta = [
+        {'hora': hora.strftime('%H:%M'), 'ocupado': hora in horarios_ocupados}
+        for hora in _horarios_barbearia()
+    ]
     return JsonResponse(resposta, safe=False)
 
+
+# ---------------------------------------------------------------------------
+# Serviços
+# ---------------------------------------------------------------------------
 
 class ServicoListView(AdminRequiredMixin, ListView):
     model = Servico
@@ -159,9 +166,17 @@ class ServicoDeleteView(AdminRequiredMixin, DeleteView):
     success_url = reverse_lazy('agendamentos:servico_list')
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'Serviço removido com sucesso.')
-        return super().delete(request, *args, **kwargs)
+        try:
+            messages.success(request, 'Serviço removido com sucesso.')
+            return super().delete(request, *args, **kwargs)
+        except ProtectedError:
+            messages.error(request, 'Este serviço possui agendamentos e não pode ser removido.')
+            return redirect('agendamentos:servico_list')
 
+
+# ---------------------------------------------------------------------------
+# Horários disponíveis
+# ---------------------------------------------------------------------------
 
 class HorarioListView(AdminRequiredMixin, ListView):
     model = HorarioDisponivel
@@ -198,9 +213,17 @@ class HorarioDeleteView(AdminRequiredMixin, DeleteView):
     success_url = reverse_lazy('agendamentos:horario_list')
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'Horário removido com sucesso.')
-        return super().delete(request, *args, **kwargs)
+        try:
+            messages.success(request, 'Horário removido com sucesso.')
+            return super().delete(request, *args, **kwargs)
+        except ProtectedError:
+            messages.error(request, 'Este horário possui agendamentos e não pode ser removido.')
+            return redirect('agendamentos:horario_list')
 
+
+# ---------------------------------------------------------------------------
+# Agendamentos — cliente
+# ---------------------------------------------------------------------------
 
 class AgendamentoListClienteView(ClienteRequiredMixin, ListView):
     model = Agendamento
@@ -209,7 +232,11 @@ class AgendamentoListClienteView(ClienteRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return Agendamento.objects.select_related('servico', 'horario_disponivel').filter(cliente=self.request.user)
+        return (
+            Agendamento.objects
+            .select_related('servico', 'horario_disponivel')
+            .filter(cliente=self.request.user)
+        )
 
 
 class AgendamentoCreateView(ClienteRequiredMixin, CreateView):
@@ -220,7 +247,6 @@ class AgendamentoCreateView(ClienteRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        _garantir_horarios_base()
 
         data_str = self.request.GET.get('data')
         hora_str = self.request.GET.get('hora')
@@ -247,7 +273,6 @@ class AgendamentoCreateView(ClienteRequiredMixin, CreateView):
         try:
             response = super().form_valid(form)
         except (ValidationError, IntegrityError):
-            # Proteção contra corrida: se outro cliente ocupou o horário no meio do fluxo.
             form.add_error('horario_disponivel', 'Este horário acabou de ser ocupado. Escolha outro horário.')
             messages.error(self.request, 'Este horário acabou de ser ocupado. Escolha outro horário.')
             return self.form_invalid(form)
@@ -266,8 +291,8 @@ class AgendamentoUpdateView(ClienteRequiredMixin, UpdateView):
         return Agendamento.objects.filter(cliente=self.request.user)
 
     def dispatch(self, request, *args, **kwargs):
-        agendamento = self.get_object()
-        if agendamento.status != Agendamento.STATUS_PENDENTE:
+        self.object = self.get_object()
+        if self.object.status != Agendamento.STATUS_PENDENTE:
             messages.error(request, 'Apenas agendamentos pendentes podem ser editados.')
             return redirect('agendamentos:agendamento_cliente_list')
         return super().dispatch(request, *args, **kwargs)
@@ -287,16 +312,27 @@ class AgendamentoCancelView(ClienteRequiredMixin, DeleteView):
 
     def post(self, request, *args, **kwargs):
         agendamento = self.get_object()
+
         if not agendamento.can_cancel():
             messages.error(request, 'Não é possível cancelar dentro da janela mínima de antecedência.')
             return redirect('agendamentos:agendamento_cliente_list')
 
-        # Em vez de remover o registro, cancelamos para manter histórico.
-        agendamento.status = Agendamento.STATUS_CANCELADO
-        agendamento.save(update_fields=['status', 'atualizado_em'])
-        messages.success(request, 'Agendamento cancelado com sucesso.')
+        updated = Agendamento.objects.filter(
+            pk=agendamento.pk,
+            status__in=[Agendamento.STATUS_PENDENTE, Agendamento.STATUS_CONFIRMADO],
+        ).update(status=Agendamento.STATUS_CANCELADO, atualizado_em=timezone.now())
+
+        if not updated:
+            messages.error(request, 'Não foi possível cancelar o agendamento.')
+        else:
+            messages.success(request, 'Agendamento cancelado com sucesso.')
+
         return redirect(self.success_url)
 
+
+# ---------------------------------------------------------------------------
+# Agendamentos — admin
+# ---------------------------------------------------------------------------
 
 class AgendamentoAdminListView(AdminRequiredMixin, ListView):
     model = Agendamento

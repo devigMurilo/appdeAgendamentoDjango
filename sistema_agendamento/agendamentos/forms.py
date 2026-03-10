@@ -49,7 +49,25 @@ class AgendamentoForm(forms.ModelForm):
             raise ValidationError('Não é permitido selecionar datas passadas.')
         if data and data.weekday() == 6:
             raise ValidationError('A barbearia não funciona aos domingos.')
-        return data
+        return data  # ← retorna data, não cleaned_data
+
+    def clean(self):
+        cleaned_data = super().clean()
+        data = cleaned_data.get('data')
+        horario = cleaned_data.get('horario_disponivel')
+        if data and horario:
+            conflito = Agendamento.objects.filter(
+                data=data,
+                horario_disponivel=horario,
+            ).exclude(status=Agendamento.STATUS_CANCELADO)
+            if self.instance.pk:
+                conflito = conflito.exclude(pk=self.instance.pk)
+            if conflito.exists():
+                self.add_error(
+                    'horario_disponivel',
+                    'Este horário já está ocupado para a data selecionada.'
+                )
+        return cleaned_data  # ← retorna cleaned_data, não data
 
 
 class AlterarStatusAgendamentoForm(forms.ModelForm):

@@ -94,15 +94,14 @@ class Agendamento(models.Model):
         return f'{self.cliente.username} - {self.servico.nome} - {self.data} {self.horario_disponivel}'
 
     def get_data_hora(self):
-        return datetime.combine(self.data, self.horario_disponivel.horario)
+        naive = datetime.combine(self.data, self.horario_disponivel.horario)
+        return timezone.make_aware(naive, timezone.get_current_timezone())
 
     def can_cancel(self):
         if self.status in (self.STATUS_CANCELADO, self.STATUS_CONCLUIDO):
             return False
-        # A janela mínima de cancelamento é configurável no settings.
-        data_hora_agendamento = timezone.make_aware(self.get_data_hora(), timezone.get_current_timezone())
         limite = timezone.now() + timedelta(hours=settings.CANCELLATION_MIN_HOURS)
-        return data_hora_agendamento >= limite
+        return self.get_data_hora() >= limite
 
     def clean(self):
         super().clean()
@@ -135,8 +134,8 @@ class Agendamento(models.Model):
             raise ValidationError({'horario_disponivel': 'Este horário já está ocupado para a data selecionada.'})
 
     def save(self, *args, **kwargs):
-        # full_clean reforça validações também em cenários concorrentes.
-        self.full_clean()
+        if not kwargs.get('update_fields'):
+            self.full_clean()
         super().save(*args, **kwargs)
 
 
