@@ -1,30 +1,50 @@
 ﻿{% extends 'base.html' %}
 {% block title %}Horários{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Horários disponíveis</h2>
-    <a class="btn btn-primary" href="{% url 'agendamentos:horario_create' %}">Novo horário</a>
+
+<div class="bb-page-header">
+  <div>
+    <div class="bb-page-header__eyebrow">Configuração</div>
+    <h2 class="bb-page-header__title">Horários Disponíveis</h2>
+  </div>
+  <a class="bb-btn bb-btn--gold" href="{% url 'agendamentos:horario_create' %}">+ Novo horário</a>
 </div>
-<div class="card card-modern">
-    <div class="table-responsive">
-        <table class="table mb-0">
-            <thead><tr><th>Horário</th><th>Ativo</th><th>Ações</th></tr></thead>
-            <tbody>
-                {% for horario in horarios %}
-                <tr>
-                    <td>{{ horario.horario|time:'H:i' }}</td>
-                    <td>{{ horario.ativo|yesno:'Sim,Não' }}</td>
-                    <td>
-                        <a href="{% url 'agendamentos:horario_update' horario.pk %}" class="btn btn-sm btn-warning">Editar</a>
-                        <a href="{% url 'agendamentos:horario_delete' horario.pk %}" class="btn btn-sm btn-danger">Excluir</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="3">Nenhum horário cadastrado.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+<div class="bb-panel">
+  <div class="bb-table-wrap">
+    <table class="bb-table">
+      <thead>
+        <tr>
+          <th>Horário</th>
+          <th>Ativo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for horario in horarios %}
+        <tr>
+          <td class="bb-table__mono bb-table__primary">{{ horario.horario|time:'H:i' }}</td>
+          <td>
+            {% if horario.ativo %}
+              <span class="bb-pill bb-pill--confirmado">Sim</span>
+            {% else %}
+              <span class="bb-pill bb-pill--cancelado">Não</span>
+            {% endif %}
+          </td>
+          <td class="bb-table__actions">
+            <a href="{% url 'agendamentos:horario_update' horario.pk %}" class="bb-btn bb-btn--xs bb-btn--outline">Editar</a>
+            <a href="{% url 'agendamentos:horario_delete' horario.pk %}" class="bb-btn bb-btn--xs bb-btn--danger">Excluir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="bb-table__empty">Nenhum horário cadastrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
 {% include 'agendamentos/pagination.html' %}
 {% endblock %}

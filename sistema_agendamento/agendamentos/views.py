@@ -16,7 +16,10 @@ from .forms import AgendamentoForm, AlterarStatusAgendamentoForm, RegistroUsuari
 from .models import Agendamento, HorarioDisponivel, Perfil, Servico
 from .utils import _horarios_barbearia
 
+
 class PerfilMixin:
+    
+    
     def is_admin(self):
         return self.request.user.is_staff or (
             hasattr(self.request.user, 'perfil')
@@ -69,6 +72,9 @@ class RegistroUsuarioView(CreateView):
 class DashboardAdminView(AdminRequiredMixin, TemplateView):
     template_name = 'agendamentos/dashboard_admin.html'
 
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.perfil.tipo_usuario == 'ADMIN'
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['total_servicos'] = Servico.objects.count()
@@ -84,11 +90,8 @@ class DashboardAdminView(AdminRequiredMixin, TemplateView):
 # Agenda (clientes)
 # ---------------------------------------------------------------------------
 
-@login_required
+
 def agenda_view(request):
-    if not _usuario_eh_cliente(request.user):
-        messages.error(request, 'A agenda é exclusiva para clientes.')
-        return redirect('agendamentos:home')
     servicos = Servico.objects.filter(ativo=True).order_by('nome')
     return render(request, 'agendamentos/agenda.html', {'servicos': servicos})
 

@@ -1,37 +1,46 @@
 ﻿{% extends 'base.html' %}
-{% block title %}Início | Sistema de Agendamento{% endblock %}
+{% block title %}Início | Barbearia{% endblock %}
 {% block content %}
-<div class="hero mb-4">
-    <h1 class="fw-bold">Sistema de Agendamento Online</h1>
-    <p class="mb-0">Gerencie seus horários com praticidade e segurança.</p>
+
+<section class="bb-hero">
+  <div class="bb-hero__eyebrow">Bem-vindo</div>
+  <h1 class="bb-hero__title">Agendamento<br><em>Online</em></h1>
+  <p class="bb-hero__sub">Gerencie seus horários com praticidade e elegância.</p>
+  <div class="bb-hero__rule"></div>
+</section>
+
+<div class="bb-cards">
+
+  <div class="bb-card">
+    <div class="bb-card__icon">✂</div>
+    <div class="bb-card__content">
+      <h5 class="bb-card__title">Para Clientes</h5>
+      <p class="bb-card__text">Crie, edite e cancele seus agendamentos em poucos cliques.</p>
+    </div>
+    <div class="bb-card__foot">
+      {% if user.is_authenticated and not user.is_staff and user.perfil.tipo_usuario == 'CLIENTE' %}
+        <a href="{% url 'agendamentos:agendamento_cliente_list' %}" class="bb-btn bb-btn--gold">Meus agendamentos</a>
+      {% else %}
+        <a href="{% url 'agendamentos:register' %}" class="bb-btn bb-btn--gold">Criar conta</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bb-card bb-card--accent">
+    <div class="bb-card__icon">◈</div>
+    <div class="bb-card__content">
+      <h5 class="bb-card__title">Para Administradores</h5>
+      <p class="bb-card__text">Controle serviços, horários e status de todos os agendamentos.</p>
+    </div>
+    <div class="bb-card__foot">
+      {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.perfil.tipo_usuario == 'ADMIN' %}
+        <a href="{% url 'agendamentos:dashboard_admin' %}" class="bb-btn bb-btn--outline">Abrir dashboard</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="bb-btn bb-btn--outline">Acessar painel</a>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="card card-modern h-100">
-            <div class="card-body">
-                <h5 class="card-title">Para clientes</h5>
-                <p class="card-text">Crie, edite e cancele seus agendamentos em poucos cliques.</p>
-                {% if user.is_authenticated and not user.is_staff and user.perfil.tipo_usuario == 'CLIENTE' %}
-                    <a href="{% url 'agendamentos:agendamento_cliente_list' %}" class="btn btn-primary">Ver meus agendamentos</a>
-                {% else %}
-                    <a href="{% url 'agendamentos:register' %}" class="btn btn-primary">Criar conta</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card card-modern h-100">
-            <div class="card-body">
-                <h5 class="card-title">Para administradores</h5>
-                <p class="card-text">Controle serviços, horários e status de todos os agendamentos.</p>
-                {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.perfil.tipo_usuario == 'ADMIN' %}
-                    <a href="{% url 'agendamentos:dashboard_admin' %}" class="btn btn-success">Abrir dashboard</a>
-                {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-success">Acessar painel</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

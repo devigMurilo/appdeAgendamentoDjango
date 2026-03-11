@@ -1,17 +1,34 @@
 ﻿{% extends 'base.html' %}
 {% block title %}Alterar Status{% endblock %}
 {% block content %}
-<div class="card card-modern col-lg-6 mx-auto">
-    <div class="card-body">
-        <h3 class="mb-3">Alterar status do agendamento</h3>
-        <p><strong>Cliente:</strong> {{ object.cliente.get_full_name|default:object.cliente.username }}</p>
-        <p><strong>Data:</strong> {{ object.data|date:'d/m/Y' }} às {{ object.horario_disponivel.horario|time:'H:i' }}</p>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn-primary" type="submit">Atualizar</button>
-            <a class="btn btn-secondary" href="{% url 'agendamentos:agendamento_admin_list' %}">Voltar</a>
-        </form>
+
+<div class="bb-form-card bb-form-card--narrow">
+  <div class="bb-form-card__header">
+    <div class="bb-page-header__eyebrow">Admin</div>
+    <h3 class="bb-form-card__title">Alterar Status</h3>
+  </div>
+  <div class="bb-form-card__body">
+
+    <div class="bb-info-block">
+      <div class="bb-info-block__row">
+        <span class="bb-info-block__key">Cliente</span>
+        <span class="bb-info-block__val">{{ object.cliente.get_full_name|default:object.cliente.username }}</span>
+      </div>
+      <div class="bb-info-block__row">
+        <span class="bb-info-block__key">Data</span>
+        <span class="bb-info-block__val">{{ object.data|date:'d/m/Y' }} às {{ object.horario_disponivel.horario|time:'H:i' }}</span>
+      </div>
     </div>
+
+    <form method="post" class="bb-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div class="bb-form__actions">
+        <button class="bb-btn bb-btn--gold" type="submit">Atualizar</button>
+        <a class="bb-btn bb-btn--ghost" href="{% url 'agendamentos:agendamento_admin_list' %}">Voltar</a>
+      </div>
+    </form>
+  </div>
 </div>
+
 {% endblock %}

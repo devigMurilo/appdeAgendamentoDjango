@@ -1,15 +1,22 @@
 ﻿{% extends 'base.html' %}
 {% block title %}Agendamento{% endblock %}
 {% block content %}
-<div class="card card-modern col-lg-8 mx-auto">
-    <div class="card-body">
-        <h3 class="mb-3">{{ view.object|default_if_none:'Novo' }} Agendamento</h3>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn-primary" type="submit">Salvar</button>
-            <a class="btn btn-secondary" href="{% url 'agendamentos:agendamento_cliente_list' %}">Voltar</a>
-        </form>
-    </div>
+
+<div class="bb-form-card">
+  <div class="bb-form-card__header">
+    <div class="bb-page-header__eyebrow">Agendamento</div>
+    <h3 class="bb-form-card__title">{{ view.object|default_if_none:'Novo' }} Agendamento</h3>
+  </div>
+  <div class="bb-form-card__body">
+    <form method="post" class="bb-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div class="bb-form__actions">
+        <button class="bb-btn bb-btn--gold" type="submit">Salvar</button>
+        <a class="bb-btn bb-btn--ghost" href="{% url 'agendamentos:agendamento_cliente_list' %}">Voltar</a>
+      </div>
+    </form>
+  </div>
 </div>
+
 {% endblock %}

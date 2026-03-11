@@ -1,15 +1,28 @@
 ﻿{% extends 'base.html' %}
 {% block title %}Entrar{% endblock %}
 {% block content %}
-<div class="card card-modern col-lg-5 mx-auto">
-    <div class="card-body">
-        <h3 class="mb-3">Login</h3>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Entrar</button>
-            <a class="btn btn-link" href="{% url 'password_reset' %}">Esqueci minha senha</a>
-        </form>
+
+<div class="bb-form-card bb-form-card--narrow">
+  <div class="bb-form-card__header">
+    <div class="bb-page-header__eyebrow">Acesso</div>
+    <h3 class="bb-form-card__title">Login</h3>
+    <p style="font-size:.85rem;color:var(--text-2);margin-top:.5rem;font-weight:300">
+      Entre na sua conta para gerenciar seus agendamentos.
+    </p>
+  </div>
+  <div class="bb-form-card__body">
+    <form method="post" class="bb-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div class="bb-form__actions">
+        <button type="submit" class="bb-btn bb-btn--gold">Entrar</button>
+        <a href="{% url 'agendamentos:register' %}" class="bb-btn bb-btn--ghost">Criar conta</a>
+      </div>
+    </form>
+    <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+      <a href="{% url 'password_reset' %}" style="font-size:.82rem;color:var(--text-3)">Esqueci minha senha</a>
     </div>
+  </div>
 </div>
+
 {% endblock %}

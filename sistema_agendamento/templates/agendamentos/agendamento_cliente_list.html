@@ -1,36 +1,52 @@
 ﻿{% extends 'base.html' %}
 {% block title %}Meus Agendamentos{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Meus agendamentos</h2>
-    <a class="btn btn-primary" href="{% url 'agendamentos:agendamento_create' %}">Novo agendamento</a>
+
+<div class="bb-page-header">
+  <div>
+    <div class="bb-page-header__eyebrow">Conta</div>
+    <h2 class="bb-page-header__title">Meus Agendamentos</h2>
+  </div>
+  <a class="bb-btn bb-btn--gold" href="{% url 'agendamentos:agendamento_create' %}">+ Novo agendamento</a>
 </div>
-<div class="card card-modern">
-    <div class="table-responsive">
-        <table class="table mb-0">
-            <thead><tr><th>Serviço</th><th>Data</th><th>Horário</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody>
-                {% for item in agendamentos %}
-                <tr>
-                    <td>{{ item.servico.nome }}</td>
-                    <td>{{ item.data|date:'d/m/Y' }}</td>
-                    <td>{{ item.horario_disponivel.horario|time:'H:i' }}</td>
-                    <td>{{ item.get_status_display }}</td>
-                    <td>
-                        {% if item.status == 'PENDENTE' %}
-                            <a class="btn btn-sm btn-warning" href="{% url 'agendamentos:agendamento_update' item.pk %}">Editar</a>
-                        {% endif %}
-                        {% if item.status != 'CANCELADO' %}
-                            <a class="btn btn-sm btn-danger" href="{% url 'agendamentos:agendamento_cancel' item.pk %}">Cancelar</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5">Nenhum agendamento encontrado.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+<div class="bb-panel">
+  <div class="bb-table-wrap">
+    <table class="bb-table">
+      <thead>
+        <tr>
+          <th>Serviço</th>
+          <th>Data</th>
+          <th>Horário</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in agendamentos %}
+        <tr>
+          <td class="bb-table__primary">{{ item.servico.nome }}</td>
+          <td>{{ item.data|date:'d/m/Y' }}</td>
+          <td class="bb-table__mono">{{ item.horario_disponivel.horario|time:'H:i' }}</td>
+          <td><span class="bb-pill bb-pill--{{ item.status|lower }}">{{ item.get_status_display }}</span></td>
+          <td class="bb-table__actions">
+            {% if item.status == 'PENDENTE' %}
+              <a class="bb-btn bb-btn--xs bb-btn--outline" href="{% url 'agendamentos:agendamento_update' item.pk %}">Editar</a>
+            {% endif %}
+            {% if item.status != 'CANCELADO' %}
+              <a class="bb-btn bb-btn--xs bb-btn--danger" href="{% url 'agendamentos:agendamento_cancel' item.pk %}">Cancelar</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="bb-table__empty">Nenhum agendamento encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
 {% include 'agendamentos/pagination.html' %}
 {% endblock %}

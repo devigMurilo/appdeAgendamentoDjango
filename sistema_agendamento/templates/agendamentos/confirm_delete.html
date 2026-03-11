@@ -1,15 +1,22 @@
 ﻿{% extends 'base.html' %}
 {% block title %}Confirmação{% endblock %}
 {% block content %}
-<div class="card card-modern col-lg-6 mx-auto">
-    <div class="card-body">
-        <h3 class="mb-3">Confirmar ação</h3>
-        <p>Tem certeza que deseja continuar?</p>
-        <form method="post">
-            {% csrf_token %}
-            <button class="btn btn-danger" type="submit">Confirmar</button>
-            <a class="btn btn-secondary" href="javascript:history.back()">Voltar</a>
-        </form>
-    </div>
+
+<div class="bb-form-card bb-form-card--narrow bb-form-card--danger-zone">
+  <div class="bb-form-card__header">
+    <div class="bb-page-header__eyebrow">Atenção</div>
+    <h3 class="bb-form-card__title">Confirmar ação</h3>
+  </div>
+  <div class="bb-form-card__body">
+    <p class="bb-form-card__desc">Esta ação não pode ser desfeita. Deseja continuar?</p>
+    <form method="post" class="bb-form">
+      {% csrf_token %}
+      <div class="bb-form__actions">
+        <button class="bb-btn bb-btn--danger" type="submit">Confirmar</button>
+        <a class="bb-btn bb-btn--ghost" href="javascript:history.back()">Voltar</a>
+      </div>
+    </form>
+  </div>
 </div>
+
 {% endblock %}

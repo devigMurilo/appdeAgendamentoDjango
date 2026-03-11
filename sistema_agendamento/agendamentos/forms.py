@@ -8,16 +8,19 @@ from .models import Agendamento, Perfil
 
 
 class RegistroUsuarioForm(UserCreationForm):
+    telefone = forms.CharField(max_length=20, required=False)
     email = forms.EmailField(required=True)
     tipo_usuario = forms.ChoiceField(choices=Perfil.TIPO_CHOICES)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'tipo_usuario', 'password1', 'password2')
+        fields = ('username', 'email', 'telefone', 'first_name', 'last_name', 'tipo_usuario', 'password1', 'password2')
 
     def save(self, commit=True):
+
         usuario = super().save(commit=False)
         usuario.email = self.cleaned_data['email']
+        usuario.perfil.telefone = self.cleaned_data['telefone']
         tipo_usuario = self.cleaned_data['tipo_usuario']
         if tipo_usuario == Perfil.TIPO_ADMIN:
             usuario.is_staff = True
