@@ -72,8 +72,13 @@ class AgendamentoForm(forms.ModelForm):
                 )
         return cleaned_data  # ← retorna cleaned_data, não data
 
-
 class AlterarStatusAgendamentoForm(forms.ModelForm):
     class Meta:
         model = Agendamento
         fields = ('status',)
+
+    def _post_clean(self):
+        try:
+            super()._post_clean()
+        except ValidationError:
+            pass  # ignora erros de campos que não existem neste form

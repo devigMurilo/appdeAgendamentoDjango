@@ -1,22 +1,324 @@
 ﻿{% extends 'base.html' %}
-{% block title %}Agendamento{% endblock %}
+{% block title %}Alterar Status{% endblock %}
 {% block content %}
 
-<div class="bb-form-card">
-  <div class="bb-form-card__header">
-    <div class="bb-page-header__eyebrow">Agendamento</div>
-    <h3 class="bb-form-card__title">{{ view.object|default_if_none:'Novo' }} Agendamento</h3>
-  </div>
-  <div class="bb-form-card__body">
-    <form method="post" class="bb-form">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <div class="bb-form__actions">
-        <button class="bb-btn bb-btn--gold" type="submit">Salvar</button>
-        <a class="bb-btn bb-btn--ghost" href="{% url 'agendamentos:agendamento_cliente_list' %}">Voltar</a>
+<style>
+  /* ── Wrapper central ── */
+  .status-wrapper {
+    max-width: 480px;
+    margin: 2.5rem auto;
+  }
+
+  /* ── Card principal ── */
+  .status-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── Header dourado ── */
+  .status-card__header {
+    padding: 1.75rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #1a1508 0%, var(--surface) 70%);
+    position: relative;
+  }
+
+  .status-card__header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 2rem; right: 2rem;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold-dk), transparent);
+  }
+
+  .status-card__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.4rem;
+  }
+
+  .status-card__title {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  /* ── Body ── */
+  .status-card__body {
+    padding: 1.75rem 2rem;
+  }
+
+  /* ── Info block refinado ── */
+  .status-info {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1.75rem;
+  }
+
+  .status-info__row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+
+  .status-info__row:last-child {
+    border-bottom: none;
+  }
+
+  .status-info__row:hover {
+    background: rgba(201,168,76,.04);
+  }
+
+  .status-info__icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(201,168,76,.1);
+    border: 1px solid rgba(201,168,76,.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+  }
+
+  .status-info__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .status-info__key {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+  }
+
+  .status-info__val {
+    font-size: 0.9rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* ── Divider com label ── */
+  .status-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .status-divider__line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .status-divider__label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  /* ── Select estilizado ── */
+  .status-select-wrap {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+
+  .status-select-wrap select {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    outline: none;
+  }
+
+  .status-select-wrap select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,.15);
+    background: #1a1a1a;
+  }
+
+  .status-select-wrap select:hover {
+    border-color: var(--border-2);
+    background: #1a1a1a;
+  }
+
+  /* Seta customizada */
+  .status-select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--text-3);
+    pointer-events: none;
+    transition: border-top-color 0.15s;
+  }
+
+  .status-select-wrap:focus-within::after {
+    border-top-color: var(--gold);
+  }
+
+  /* Cor dinâmica do select por valor */
+  .status-select-wrap.val--PENDENTE select   { border-color: rgba(214,137,16,.4); color: var(--warning); }
+  .status-select-wrap.val--CONFIRMADO select { border-color: rgba(39,174,96,.4);  color: var(--success-lt); }
+  .status-select-wrap.val--CONCLUIDO select  { border-color: rgba(201,168,76,.4); color: var(--gold); }
+  .status-select-wrap.val--CANCELADO select  { border-color: rgba(192,57,43,.4);  color: var(--danger-lt); }
+
+  /* ── Erros do form ── */
+  .status-errors {
+    margin-top: 0.4rem;
+  }
+
+  .status-errors li {
+    font-size: 0.8rem;
+    color: var(--danger-lt);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .status-errors li::before {
+    content: '✕';
+    font-size: 0.65rem;
+  }
+
+  /* ── Actions ── */
+  .status-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .status-actions .bb-btn--gold {
+    flex: 1;
+    justify-content: center;
+  }
+</style>
+
+<div class="status-wrapper">
+  <div class="status-card">
+
+    <div class="status-card__header">
+      <div class="status-card__eyebrow">&#9632; Admin · Agendamentos</div>
+      <h2 class="status-card__title">Alterar Status</h2>
+    </div>
+
+    <div class="status-card__body">
+
+      <!-- Informações do agendamento -->
+      <div class="status-info">
+        <div class="status-info__row">
+          <div class="status-info__icon">👤</div>
+          <div class="status-info__content">
+            <span class="status-info__key">Cliente</span>
+            <span class="status-info__val">
+              {{ object.cliente.get_full_name|default:object.cliente.username }}
+            </span>
+          </div>
+        </div>
+        <div class="status-info__row">
+          <div class="status-info__icon">📅</div>
+          <div class="status-info__content">
+            <span class="status-info__key">Data</span>
+            <span class="status-info__val">
+              {{ object.data|date:'d/m/Y' }} às {{ object.horario_disponivel.horario|time:'H:i' }}
+            </span>
+          </div>
+        </div>
+        <div class="status-info__row">
+          <div class="status-info__icon">✂️</div>
+          <div class="status-info__content">
+            <span class="status-info__key">Serviço</span>
+            <span class="status-info__val">{{ object.servico.nome }}</span>
+          </div>
+        </div>
       </div>
-    </form>
+
+      <!-- Divider -->
+      <div class="status-divider">
+        <div class="status-divider__line"></div>
+        <span class="status-divider__label">Novo status</span>
+        <div class="status-divider__line"></div>
+      </div>
+
+      <!-- Form -->
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="status-select-wrap" id="selectWrap">
+          {{ form.status }}
+        </div>
+
+        {% if form.status.errors %}
+          <ul class="status-errors">
+            {% for error in form.status.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if form.non_field_errors %}
+          {% for error in form.non_field_errors %}
+            <div class="bb-alert bb-alert--danger" style="margin-top:.75rem">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="status-actions">
+          <button class="bb-btn bb-btn--gold" type="submit">Salvar alteração</button>
+          <a class="bb-btn bb-btn--outline" href="{% url 'agendamentos:agendamento_admin_list' %}">Voltar</a>
+        </div>
+      </form>
+
+    </div>
   </div>
 </div>
+
+<script>
+  // Colore o select dinamicamente conforme o valor selecionado
+  const wrap   = document.getElementById('selectWrap');
+  const select = wrap.querySelector('select');
+
+  function updateColor() {
+    wrap.className = 'status-select-wrap val--' + select.value;
+  }
+
+  select.addEventListener('change', updateColor);
+  updateColor(); // aplica na carga
+</script>
 
 {% endblock %}

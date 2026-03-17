@@ -1,4 +1,5 @@
 ﻿from datetime import datetime, time
+from urllib import request
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -369,6 +370,14 @@ class AgendamentoStatusUpdateView(AdminRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('agendamentos:agendamento_admin_list')
 
+    def dispatch(self, request, *args, **kwargs):
+        agendamento = self.get_object()
+        if agendamento.data < timezone.localdate():
+            messages.error(request, 'Não é possível alterar o status de agendamentos com data passada.')
+            return redirect('agendamentos:agendamento_admin_list')
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
-        messages.success(self.request, 'Status do agendamento atualizado com sucesso.')
-        return super().form_valid(form)
+        form.instance.save(update_fields=['status', 'atualizado_em'])
+        messages.success(self.request, 'Status atualizado com sucesso.')
+        return redirect(self.get_success_url())
